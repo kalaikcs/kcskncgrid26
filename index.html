@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Department Memory Game</title>
+<style>
+  :root {
+    --bg1: #6a5cf5;
+    --bg2: #ff6fa5;
+    --card-bg: #ffffff;
+    --border: #e0dcf5;
+    --text: #262624;
+    --text-secondary: #6b6963;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #6a5cf5, #ff6fa5 50%, #ffb84d);
+    min-height: 100vh;
+    color: var(--text);
+    margin: 0;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #ffffff;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .subtitle { font-size: 14px; color: rgba(255,255,255,0.9); margin: 0 0 2rem; }
+  .panel {
+    max-width: 480px;
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+  label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display:block; margin-bottom:4px; }
+  input[type="text"], select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 14px;
+    background: #faf9ff;
+  }
+  button {
+    background: linear-gradient(135deg, #6a5cf5, #a06cf5);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    box-shadow: 0 4px 14px rgba(106,92,245,0.4);
+  }
+  button:hover { filter: brightness(1.08); }
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1rem;
+    font-size: 14px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+  .stats .val { font-weight: 700; color: #6a5cf5; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 480px;
+    width: 100%;
+  }
+  .card {
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.12s;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+  }
+  .card:active { transform: scale(0.95); }
+  .card.hidden-face { background: linear-gradient(135deg, #f5f3ff, #ffe9f5); color: #b9a9f0; font-size: 20px; }
+  .card.matched { opacity: 0.5; cursor: default; }
+  .c0 { background: #ffe1ec; }
+  .c1 { background: #fff2cc; }
+  .c2 { background: #ffe8b8; }
+  .c3 { background: #e6dcff; }
+  .c4 { background: #ffdcc2; }
+  .c5 { background: #ffd6d6; }
+  .c6 { background: #d6f0ff; }
+  .c7 { background: #d9f5df; }
+  .win-box {
+    text-align: center;
+    margin: 1.5rem 0;
+    max-width: 480px;
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+  .win-box .headline { font-size: 19px; font-weight: 700; margin-bottom: 4px; color: #6a5cf5; }
+  .win-box .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+  .leaderboard {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 2rem;
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  }
+  .leaderboard h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #6a5cf5;
+  }
+  .lb-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .lb-row:first-child { padding-top: 0; }
+  .lb-row .rank {
+    color: white;
+    background: #ffb84d;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+  .lb-row .name-block { display: flex; flex-direction: column; }
+  .lb-row .team { font-weight: 700; }
+  .lb-row .meta { font-size: 12px; color: var(--text-secondary); }
+  .lb-row .score { color: var(--text-secondary); font-size: 13px; text-align: right; white-space: nowrap; }
+  .empty { font-size: 13px; color: var(--text-secondary); }
+  .clear-btn {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    width: auto;
+    box-shadow: none;
+  }
+  .clear-btn:hover { filter: none; color: #6a5cf5; }
+</style>
+</head>
+<body>
+
+<h1>Memory match — department showdown</h1>
+<p class="subtitle">Enter your details, flip cards to find pairs, and race the clock.</p>
+
+<div class="panel" id="setup">
+  <label for="student-name">Student name</label>
+  <input type="text" id="student-name" placeholder="e.g. Priya Sharma" maxlength="40">
+
+  <label for="year">Year</label>
+  <select id="year">
+    <option value="">Select year</option>
+    <option value="1st Year">1st Year</option>
+    <option value="2nd Year">2nd Year</option>
+    <option value="3rd Year">3rd Year</option>
+    <option value="4th Year">4th Year</option>
+  </select>
+
+  <label for="dept-name">Department</label>
+  <input type="text" id="dept-name" placeholder="e.g. Computer Science" maxlength="40">
+
+  <button id="start-btn">Start game</button>
+</div>
+
+<div class="panel" id="game" style="display:none;">
+  <div class="stats">
+    <div id="player-display" style="font-weight:700;"></div>
+    <div>Time: <span class="val" id="timer">0s</span></div>
+    <div>Moves: <span class="val" id="moves">0</span></div>
+  </div>
+  <div id="board"></div>
+</div>
+
+<div class="win-box" id="win" style="display:none;">
+  <p class="headline" id="win-text"></p>
+  <p class="sub">Score saved to the leaderboard below.</p>
+  <button id="play-again">Play again</button>
+</div>
+
+<div class="leaderboard">
+  <h2>Leaderboard</h2>
+  <div id="leaderboard-list"></div>
+  <button class="clear-btn" id="clear-lb">Clear leaderboard</button>
+</div>
+
+<script>
+const ICONS = ['❤','★','☀','☾','⚡','🔥','☁','❈'];
+const LB_KEY = 'department_memory_leaderboard';
+
+let cards = [], flipped = [], matched = new Set(), moves = 0, lock = false;
+let studentName = '', year = '', deptName = '';
+let startTime = null, timerInterval = null, elapsed = 0;
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function loadLeaderboard() {
+  try {
+    const raw = localStorage.getItem(LB_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLeaderboard(list) {
+  try {
+    localStorage.setItem(LB_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Could not save leaderboard', e);
+  }
+}
+
+function scoreOf(entry) {
+  return entry.time * 10 + entry.moves;
+}
+
+function renderLeaderboard() {
+  const list = loadLeaderboard();
+  const el = document.getElementById('leaderboard-list');
+  if (list.length === 0) {
+    el.innerHTML = '<p class="empty">No scores yet. Be the first to play!</p>';
+    return;
+  }
+  const sorted = list.slice().sort((a, b) => scoreOf(a) - scoreOf(b)).slice(0, 20);
+  el.innerHTML = sorted.map((e, i) => `
+    <div class="lb-row">
+      <div style="display:flex; align-items:center;">
+        <span class="rank">${i + 1}</span>
+        <div class="name-block">
+          <span class="team">${escapeHtml(e.name)}</span>
+          <span class="meta">${escapeHtml(e.dept)} · ${escapeHtml(e.year)}</span>
+        </div>
+      </div>
+      <span class="score">${e.time}s<br>${e.moves} moves</span>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  const nameVal = document.getElementById('student-name').value.trim();
+  const yearVal = document.getElementById('year').value;
+  const deptVal = document.getElementById('dept-name').value.trim();
+
+  if (!nameVal || !yearVal || !deptVal) {
+    alert('Please fill in your name, year, and department before starting.');
+    return;
+  }
+
+  studentName = nameVal;
+  year = yearVal;
+  deptName = deptVal;
+
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('player-display').textContent = studentName + ' · ' + deptName + ' · ' + year;
+  initGame();
+});
+
+document.getElementById('play-again').addEventListener('click', () => {
+  document.getElementById('win').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+  document.getElementById('student-name').value = '';
+  document.getElementById('year').value = '';
+  document.getElementById('dept-name').value = '';
+  clearInterval(timerInterval);
+});
+
+document.getElementById('clear-lb').addEventListener('click', () => {
+  if (confirm('Clear the entire leaderboard? This cannot be undone.')) {
+    saveLeaderboard([]);
+    renderLeaderboard();
+  }
+});
+
+function initGame() {
+  const deck = shuffle([...ICONS, ...ICONS]).map((icon, id) => ({
+    icon,
+    id,
+    colorClass: 'c' + (ICONS.indexOf(icon))
+  }));
+  cards = deck;
+  flipped = [];
+  matched = new Set();
+  moves = 0;
+  lock = false;
+  elapsed = 0;
+  document.getElementById('moves').textContent = '0';
+  document.getElementById('timer').textContent = '0s';
+  startTime = Date.now();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('timer').textContent = elapsed + 's';
+  }, 1000);
+  renderBoard();
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  cards.forEach((card, idx) => {
+    const isFlipped = flipped.includes(idx);
+    const isMatched = matched.has(idx);
+    const cell = document.createElement('div');
+    cell.className = 'card' + (isMatched ? ' matched' : '');
+    if (isFlipped || isMatched) {
+      cell.classList.add(card.colorClass);
+      cell.textContent = card.icon;
+    } else {
+      cell.classList.add('hidden-face');
+      cell.textContent = '?';
+    }
+    cell.addEventListener('click', () => handleClick(idx));
+    board.appendChild(cell);
+  });
+}
+
+function handleClick(idx) {
+  if (lock || flipped.includes(idx) || matched.has(idx) || flipped.length >= 2) return;
+  flipped.push(idx);
+  renderBoard();
+  if (flipped.length === 2) {
+    moves++;
+    document.getElementById('moves').textContent = moves;
+    const [a, b] = flipped;
+    if (cards[a].icon === cards[b].icon) {
+      matched.add(a);
+      matched.add(b);
+      flipped = [];
+      if (matched.size === cards.length) {
+        clearInterval(timerInterval);
+        finishGame();
+      }
+    } else {
+      lock = true;
+      setTimeout(() => {
+        flipped = [];
+        lock = false;
+        renderBoard();
+      }, 700);
+    }
+  }
+}
+
+function finishGame() {
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('win').style.display = 'block';
+  document.getElementById('win-text').textContent =
+    studentName + ' finished in ' + elapsed + 's, ' + moves + ' moves';
+  const list = loadLeaderboard();
+  list.push({
+    name: studentName,
+    dept: deptName,
+    year: year,
+    time: elapsed,
+    moves: moves,
+    ts: Date.now()
+  });
+  saveLeaderboard(list);
+  renderLeaderboard();
+}
+
+renderLeaderboard();
+</script>
+
+</body>
+</html>
